@@ -1,5 +1,5 @@
 import pygame as pg
-import gamerepo as gp
+import gamerepo as gr
 
 SCREEN_WIDTH = 648
 SCREEN_HEIGHT = 864
@@ -9,14 +9,17 @@ if __name__ == '__main__':
     screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
     screen_rect = screen.get_rect()
     pg.display.flip()
-    clock = pg.time.Clock()
     run = True
-    player_speed = 5
+    clock = pg.time.Clock()
+    frames = 40
+    size = 96  # Ship's sprite size
     laser_speed = 7
 
     # GROUPS
     players = pg.sprite.Group()
     lasers = pg.sprite.Group()
+    enemies = pg.sprite.Group()
+    enemies_lasers = pg.sprite.Group()
 
     # Player data
     player_laser = pg.transform.smoothscale(pg.image.load(
@@ -24,12 +27,20 @@ if __name__ == '__main__':
     player_ship = []
     for i in range(1, 9):
         img = pg.transform.smoothscale(pg.image.load(
-            'images/player/{0}.png'.format(str(i))), (96, 96))
+            'images/player/{0}.png'.format(str(i))), (size, size))
         player_ship.append(img)
-    player = gp.Player(screen_rect, player_ship,
-                       [screen_rect.centerx - 96/2, SCREEN_HEIGHT])
+    player = gr.Player(screen_rect, player_ship,
+                       [screen_rect.centerx - size / 2, SCREEN_HEIGHT - size])  # Player centered at the bottom
     players.add(player)
 
+    # Enemy data
+    enemy_laser = pg.transform.smoothscale(pg.image.load(
+        'images/enemy/laser.png'), (24, 24))
+    enemy_ship = []
+    for i in range(1, 9):
+        img = pg.transform.smoothscale(pg.image.load(
+            'images/enemy/{0}.png'.format(str(i))), (size, size))
+        enemy_ship.append(img)
 
     while run:
         for event in pg.event.get():
@@ -39,7 +50,7 @@ if __name__ == '__main__':
                 if event.key == pg.K_ESCAPE:
                     run = False
                 if event.key == pg.K_SPACE:
-                    laser = gp.Laser(player_laser, -laser_speed,
+                    laser = gr.Laser(player_laser, -laser_speed,
                                      [player.rect.centerx, player.rect.y])
                     lasers.add(laser)
             if event.type == pg.KEYUP:
@@ -48,15 +59,37 @@ if __name__ == '__main__':
 
         keys = pg.key.get_pressed()
 
+        # Enemies control
+        if len(enemies) < 5:
+            pos = gr.generate_enemy_pos(SCREEN_WIDTH, size, size * 3)
+            enemy = gr.Enemy(enemy_ship, pos)
+            enemies.add(enemy)
 
+        for e in enemies:
+            if e.rect.y > (SCREEN_HEIGHT * 2 / 3) - size:
+                # Changes enemy vel when it reaches 2/3 of the screen
+                e.vel_y = -e.speed
+            elif (e.rect.y < 0) and (e.vel_y < 0):
+                # Changes enemy vel before it leaves the screen
+                e.vel_y = e.speed
 
+        for l in lasers:
+            if l.rect.y < -l.rect.height:
+                # Deletes the laser when it reaches the end of the screen
+                lasers.remove(l)
 
+        # Update
         players.update(keys)
         lasers.update()
-        screen.fill(gp.BLACK)
+        enemies.update()
 
-        lasers.draw(screen)
+        # Draw
+        screen.fill(gr.BLACK)
         players.draw(screen)
+        lasers.draw(screen)
+        enemies.draw(screen)
 
         pg.display.flip()
-        clock.tick(40)
+        clock.tick(frames)
+
+        # print(pg.time.get_ticks())
