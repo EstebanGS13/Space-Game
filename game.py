@@ -7,21 +7,29 @@ SCREEN_HEIGHT = 864
 if __name__ == '__main__':
     pg.init()
     screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+    screen_rect = screen.get_rect()
     pg.display.flip()
     clock = pg.time.Clock()
     run = True
-    player_speed = 7
+    player_speed = 5
+    laser_speed = 7
 
     # GROUPS
     players = pg.sprite.Group()
+    lasers = pg.sprite.Group()
 
-    ship_sprites = [] # todo usar matriz de sprites
+    # Player data
+    player_laser = pg.transform.smoothscale(pg.image.load(
+        'images/player/laser.png'), (24, 24))
+    player_ship = []
     for i in range(1, 9):
-        img = pg.transform.smoothscale(pg.image.load('images/{0}.png'.format(str(i))), (96, 96))
-        ship_sprites.append(img)
-
-    player = gp.Player(ship_sprites, [300, 300])
+        img = pg.transform.smoothscale(pg.image.load(
+            'images/player/{0}.png'.format(str(i))), (96, 96))
+        player_ship.append(img)
+    player = gp.Player(screen_rect, player_ship,
+                       [screen_rect.centerx - 96/2, SCREEN_HEIGHT])
     players.add(player)
+
 
     while run:
         for event in pg.event.get():
@@ -30,50 +38,24 @@ if __name__ == '__main__':
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     run = False
+                if event.key == pg.K_SPACE:
+                    laser = gp.Laser(player_laser, -laser_speed,
+                                     [player.rect.centerx, player.rect.y])
+                    lasers.add(laser)
             if event.type == pg.KEYUP:
                 player.vel_x = 0
                 player.vel_y = 0
 
         keys = pg.key.get_pressed()
 
-        if keys[pg.K_RIGHT]:
-            player.vel_x = player_speed
-            player.vel_y = 0
-        if keys[pg.K_RIGHT] and keys[pg.K_SPACE]:
-            player.vel_x = player_speed
-            player.vel_y = 0
-
-        if keys[pg.K_LEFT]:
-            player.vel_x = -player_speed
-            player.vel_y = 0
-        if keys[pg.K_LEFT] and keys[pg.K_SPACE]:
-            player.vel_x = -player_speed
-            player.vel_y = 0
-
-        if keys[pg.K_DOWN]:
-            player.vel_x = 0
-            player.vel_y = player_speed
-        if keys[pg.K_DOWN] and keys[pg.K_SPACE]:
-            player.vel_x = 0
-            player.vel_y = player_speed
-
-        if keys[pg.K_UP]:
-            player.vel_x = 0
-            player.vel_y = -player_speed
-        if keys[pg.K_UP] and keys[pg.K_SPACE]:
-            player.vel_x = 0
-            player.vel_y = -player_speed
-
-        if keys[pg.K_SPACE]:
-            print("solo dispara")
-        if keys[pg.K_LEFT] and keys[pg.K_RIGHT]:
-            player.vel_x = 0
-            player.vel_y = 0
 
 
-        players.update()
+
+        players.update(keys)
+        lasers.update()
         screen.fill(gp.BLACK)
 
+        lasers.draw(screen)
         players.draw(screen)
 
         pg.display.flip()
