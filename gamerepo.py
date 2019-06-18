@@ -11,6 +11,32 @@ BROWN = [128, 0, 0]
 PURPLE = [128, 0, 128]
 GRAY = [128, 128, 128]
 
+PLAYER_SPEED = 5
+ENEMY_SPEED = 4
+
+
+def cut_sprite(img, column, row, width, height):
+    cut = img.subsurface(column * width, row * height, width, height)
+    return cut
+
+
+def sprites_matrix(img, sprite_width, sprite_height):
+    img_info = img.get_rect()
+    img_width = img_info[2]
+    img_height = img_info[3]
+
+    rows = img_height // sprite_height
+    columns = img_width // sprite_width
+
+    matrix = []
+    for i in range(rows):
+        row_list = []
+        for j in range(columns):
+            cut = cut_sprite(img, j, i, sprite_width, sprite_height)
+            row_list.append(cut)
+        matrix.append(row_list)
+    return matrix
+
 
 def generate_enemy_pos(x_range, size, y_range):
     """
@@ -33,7 +59,7 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
         self.rect.y = position[1]
-        self.speed = 5
+        self.speed = PLAYER_SPEED
 
     def update(self, keys):
         self.rect.clamp_ip(self.screen_rect)    # Prevents it from moving outside the screen
@@ -58,7 +84,6 @@ class Enemy(pg.sprite.Sprite):
 
     def __init__(self, motion, position):
         pg.sprite.Sprite.__init__(self)
-        # self.screen_rect = screen_rect
         self.motion = motion
         self.index = 0
         self.image = self.motion[self.index]
@@ -66,9 +91,10 @@ class Enemy(pg.sprite.Sprite):
         self.rect.x = position[0]
         self.rect.y = position[1]
         self.radius = (self.rect[2] // 2) - 6
-        self.speed = 4
+        self.speed = ENEMY_SPEED
         self.vel_x = 0
         self.vel_y = self.speed
+        self.health = 2
 
     def update(self):
         self.image = self.motion[self.index]
@@ -94,3 +120,22 @@ class Laser(pg.sprite.Sprite):
 
     def update(self):
         self.rect.y += self.vel
+
+
+class Explosion(pg.sprite.Sprite):
+
+    def __init__(self, motion, position):
+        pg.sprite.Sprite.__init__(self)
+        self.motion = motion
+        self.index = 0
+        self.image = self.motion[self.index]
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+        self.vel_y = ENEMY_SPEED
+
+    def update(self):
+        self.image = self.motion[self.index]
+        if self.index < len(self.motion) - 1:
+            self.index += 1
+        else:
+            self.index = 0  # todo eliminar la explosion al terminar animacion
