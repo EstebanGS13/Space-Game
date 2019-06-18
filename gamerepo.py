@@ -65,6 +65,7 @@ class Enemy(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
         self.rect.y = position[1]
+        self.radius = (self.rect[2] // 2) - 6
         self.speed = 4
         self.vel_x = 0
         self.vel_y = self.speed
@@ -88,6 +89,7 @@ class Laser(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0] - self.rect.centerx   # Puts the laser at the top center
         self.rect.y = position[1]
+        self.radius = self.rect[2] // 2
         self.vel = vel
 
     def update(self):

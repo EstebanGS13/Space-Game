@@ -11,7 +11,7 @@ if __name__ == '__main__':
     pg.display.flip()
     run = True
     clock = pg.time.Clock()
-    frames = 40
+    frames = 20
     size = 96  # Ship's sprite size
     laser_speed = 7
 
@@ -43,6 +43,8 @@ if __name__ == '__main__':
         enemy_ship.append(img)
 
     while run:
+        keys = pg.key.get_pressed()
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 run = False
@@ -56,8 +58,6 @@ if __name__ == '__main__':
             if event.type == pg.KEYUP:
                 player.vel_x = 0
                 player.vel_y = 0
-
-        keys = pg.key.get_pressed()
 
         # Enemies control
         if len(enemies) < 5:
@@ -73,9 +73,15 @@ if __name__ == '__main__':
                 # Changes enemy vel before it leaves the screen
                 e.vel_y = e.speed
 
+        # Player's lasers control
         for l in lasers:
             if l.rect.y < -l.rect.height:
                 # Deletes the laser when it reaches the end of the screen
+                lasers.remove(l)
+
+            lasers_coll = pg.sprite.spritecollide(l, enemies, True,
+                                                  pg.sprite.collide_circle)
+            for item in lasers_coll:
                 lasers.remove(l)
 
         # Update
