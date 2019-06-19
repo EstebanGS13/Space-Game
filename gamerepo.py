@@ -59,6 +59,7 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
         self.rect.y = position[1]
+        self.radius = (self.rect[2] // 2) - 15
         self.speed = PLAYER_SPEED
 
     def update(self, keys):
@@ -112,6 +113,7 @@ class Enemy(pg.sprite.Sprite):
         self.rect.y += self.vel_y
         self.timer -= 1
 
+
 class Laser(pg.sprite.Sprite):
     
     def __init__(self, img, vel, position):
@@ -139,8 +141,6 @@ class Explosion(pg.sprite.Sprite):
         self.vel_y = ENEMY_SPEED
 
     def update(self):
-        self.image = self.motion[self.index]
         if self.index < len(self.motion) - 1:
+            self.image = self.motion[self.index]
             self.index += 1
-        else:
-            self.index = 0  # todo eliminar la explosion al terminar animacion

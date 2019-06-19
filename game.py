@@ -3,12 +3,12 @@ import gamerepo as gr
 import random
 
 SCREEN_WIDTH = 648
-SCREEN_HEIGHT = 864
+SCREEN_HEIGHT = 864 - 150  # Changed for test purposes
 
 if __name__ == '__main__':
     pg.init()
     screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
-    screen_rect = screen.get_rect()
+    screen_rect = screen.get_rect()  # <rect(0, 0, 648, 864)>
     pg.display.flip()
     run = True
     clock = pg.time.Clock()
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     size = 96  # Ship's sprite size
     laser_speed = 7
     bottom_center = [screen_rect.centerx - size / 2, SCREEN_HEIGHT - size]
-    previous = bottom_center[0]
+    previous = bottom_center[0]  # Previous player's pos
 
     # GROUPS
     players = pg.sprite.Group()
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     # Player data
     player_laser = pg.transform.smoothscale(pg.image.load(
-        'images/player/laser.png'), (size // 3, size // 3))
+        'images/player/laser.png'), (size // 4, size // 4))
     player_ship = []
     for i in range(1, 9):
         img_player = pg.transform.smoothscale(pg.image.load(
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # Enemy data
     enemy_laser = pg.transform.smoothscale(pg.image.load(
-        'images/enemy/laser.png'), (size // 3, size // 3))
+        'images/enemy/laser.png'), (size // 4, size // 4))
     enemy_ship = []
     for i in range(1, 9):
         img_enemy = pg.transform.smoothscale(pg.image.load(
@@ -46,10 +46,11 @@ if __name__ == '__main__':
         enemy_ship.append(img_enemy)
 
     # Effects data
-    # todo testear con singular
-    img_effects = pg.transform.smoothscale(pg.image.load(
-        'images/effects/effects_256x256.png'), (size * 8, size * 2))  # todo hacer la explosion mas grande
-    effects_matrix = gr.sprites_matrix(img_effects, size // 2, size // 2)
+    laser_hit_explosion = []
+    for i in range(1, 18):
+        img_hit = pg.transform.smoothscale(pg.image.load(
+            'images/effects/{0}.png'.format(str(i))), (size // 2, size // 2))
+        laser_hit_explosion.append(img_hit)
 
     while run:
         keys = pg.key.get_pressed()
@@ -99,14 +100,49 @@ if __name__ == '__main__':
             lasers_hits = pg.sprite.spritecollide(l, enemies, False,
                                                   pg.sprite.collide_circle)
             for enemy in lasers_hits:
-                lasers.remove(l)
+                pos_l = l.rect.center
+                lasers.remove(l)  # Delete blue laser when it hits
+                # Create explosion when blue laser hits
+                explosion = gr.Explosion(laser_hit_explosion, pos_l)
+                explosions.add(explosion)
                 if enemy.health == 0:
-                    pos = enemy.rect.center
+                    pos_e = enemy.rect.center
                     enemies.remove(enemy)
-                    explosion = gr.Explosion(effects_matrix[2], pos)
-                    explosions.add(explosion)
+                    # todo agregar RED BLAST
+                    # explosion = gr.Explosion(laser_hit_explosion, pos_e)
+                    # explosions.add(explosion)
                 else:
                     enemy.health -= 1
+
+        # Enemies' lasers control
+        for l in enemies_lasers:
+            if l.rect.y > screen_rect[3]:
+                # Delete enemies' lasers when they leave the screen
+                enemies_lasers.remove(l)
+
+            enemy_lasers_hits = pg.sprite.spritecollide(l, players, False,
+                                                        pg.sprite.collide_circle)
+            for p in enemy_lasers_hits:
+                pos_l = l.rect.center
+                enemies_lasers.remove(l)  # Delete red lasers that hit
+                # Create explosion when blue laser hits
+                explosion = gr.Explosion(laser_hit_explosion, pos_l)
+                explosions.add(explosion)
+
+                # todo implementar cuando tenga vida el jugador
+                # if p.health == 0:
+                #     pos = p.rect.center
+                #     players.remove(p)
+                #     explosion = gr.Explosion(effects_matrix[2], pos)
+                #     explosions.add(explosion)
+                # else:
+                #     p.health -= 1
+
+        # Lasers' hits explosion control
+        for h in explosions:
+            if h.index == (len(laser_hit_explosion) - 1):
+                # Delete the explosion when animation is over
+                explosions.remove(h)
 
         # Update
         players.update(keys)
@@ -115,7 +151,7 @@ if __name__ == '__main__':
         enemies_lasers.update()
         explosions.update()
 
-        previous = player.rect.centerx
+        previous = player.rect.centerx  # Updates previous player's pos
 
         # Draw
         screen.fill(gr.BLACK)
