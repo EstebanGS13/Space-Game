@@ -1,5 +1,6 @@
 import pygame as pg
 import gamerepo as gr
+import random
 
 SCREEN_WIDTH = 648
 SCREEN_HEIGHT = 864
@@ -14,6 +15,8 @@ if __name__ == '__main__':
     frames = 20
     size = 96  # Ship's sprite size
     laser_speed = 7
+    bottom_center = [screen_rect.centerx - size / 2, SCREEN_HEIGHT - size]
+    previous = bottom_center[0]
 
     # GROUPS
     players = pg.sprite.Group()
@@ -24,19 +27,18 @@ if __name__ == '__main__':
 
     # Player data
     player_laser = pg.transform.smoothscale(pg.image.load(
-        'images/player/laser.png'), (24, 24))
+        'images/player/laser.png'), (size // 3, size // 3))
     player_ship = []
     for i in range(1, 9):
         img_player = pg.transform.smoothscale(pg.image.load(
             'images/player/{0}.png'.format(str(i))), (size, size))
         player_ship.append(img_player)
-    player = gr.Player(screen_rect, player_ship,
-                       [screen_rect.centerx - size / 2, SCREEN_HEIGHT - size])  # Player centered at the bottom
+    player = gr.Player(screen_rect, player_ship, bottom_center)  # Player centered at the bottom
     players.add(player)
 
     # Enemy data
     enemy_laser = pg.transform.smoothscale(pg.image.load(
-        'images/enemy/laser.png'), (24, 24))
+        'images/enemy/laser.png'), (size // 3, size // 3))
     enemy_ship = []
     for i in range(1, 9):
         img_enemy = pg.transform.smoothscale(pg.image.load(
@@ -80,12 +82,20 @@ if __name__ == '__main__':
                 # Changes enemy vel before it leaves the screen
                 e.vel_y = e.speed
 
+            if e.timer == 0:
+                # Create enemy's lasers
+                e_laser = gr.Laser(enemy_laser, laser_speed,
+                                   [e.rect.centerx, e.rect.y + size])
+                enemies_lasers.add(e_laser)
+                e.timer = random.randrange(70)
+
         # Player's lasers control
         for l in lasers:
             if l.rect.y < -l.rect.height:
                 # Deletes the laser when it reaches the end of the screen
                 lasers.remove(l)
 
+            # Collision with enemies
             lasers_hits = pg.sprite.spritecollide(l, enemies, False,
                                                   pg.sprite.collide_circle)
             for enemy in lasers_hits:
@@ -101,14 +111,18 @@ if __name__ == '__main__':
         # Update
         players.update(keys)
         lasers.update()
-        enemies.update()
+        enemies.update(previous)
+        enemies_lasers.update()
         explosions.update()
+
+        previous = player.rect.centerx
 
         # Draw
         screen.fill(gr.BLACK)
         players.draw(screen)
         lasers.draw(screen)
         enemies.draw(screen)
+        enemies_lasers.draw(screen)
         explosions.draw(screen)
 
         pg.display.flip()

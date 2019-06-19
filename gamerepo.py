@@ -90,13 +90,14 @@ class Enemy(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
         self.rect.y = position[1]
-        self.radius = (self.rect[2] // 2) - 6
-        self.speed = ENEMY_SPEED
-        self.vel_x = 0
+        self.radius = (self.rect[2] // 2) - 6  # Approx. radius
+        self.speed = random.randrange(3, 6)
+        self.vel_x = 1
         self.vel_y = self.speed
         self.health = 2
+        self.timer = random.randrange(70)
 
-    def update(self):
+    def update(self, player_pos):
         self.image = self.motion[self.index]
         if self.index < len(self.motion) - 1:
             self.index += 1
@@ -104,8 +105,12 @@ class Enemy(pg.sprite.Sprite):
             self.index = 0
 
         # Movement
+        if self.rect.centerx < player_pos:
+            self.rect.x += self.vel_x
+        else:
+            self.rect.x -= self.vel_x
         self.rect.y += self.vel_y
-
+        self.timer -= 1
 
 class Laser(pg.sprite.Sprite):
     
