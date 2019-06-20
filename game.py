@@ -51,6 +51,7 @@ if __name__ == '__main__':
                 if event.key == pg.K_SPACE:
                     laser = gr.Laser(player_laser, -laser_speed,
                                      [player.rect.centerx, player.rect.y])
+                    player.sfx.play()
                     lasers.add(laser)
             if event.type == pg.KEYUP:
                 player.vel_x = 0

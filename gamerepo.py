@@ -84,6 +84,7 @@ class Player(pg.sprite.Sprite):
         self.screen_rect = screen_rect
         self.motion = motion
         self.index = 0
+        self.sfx = pg.mixer.Sound('sfx/laserfire01.ogg')
         self.image = self.motion[self.index]
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
