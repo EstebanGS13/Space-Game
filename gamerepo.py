@@ -15,6 +15,35 @@ PLAYER_SPEED = 5
 ENEMY_SPEED = 4
 
 
+def load_image(path, factor, size=96):
+    """
+    Takes an image's path, loads it up, then resizes it
+    Args:
+
+    Returns:
+        An scaled image
+    """
+    resize = int(size * factor)
+    img = pg.transform.smoothscale(pg.image.load(path), (resize, resize))
+    return img
+
+
+def load_animation(path, start, end, factor, size=96):
+    """
+    Loops through several images' path, loads them up, resizes them
+    and then appends them to a list
+    Returns:
+        A list of resized images
+    """
+    resize = int(size * factor)
+    img_list = []
+    for i in range(start, end):
+        img = pg.transform.smoothscale(pg.image.load(
+            path.format(str(i))), (resize, resize))
+        img_list.append(img)
+    return img_list
+
+
 def cut_sprite(img, column, row, width, height):
     cut = img.subsurface(column * width, row * height, width, height)
     return cut
@@ -63,7 +92,7 @@ class Player(pg.sprite.Sprite):
         self.speed = PLAYER_SPEED
 
     def update(self, keys):
-        self.rect.clamp_ip(self.screen_rect)    # Prevents it from moving outside the screen
+        self.rect.clamp_ip(self.screen_rect)  # Prevents it from moving outside the screen
         self.image = self.motion[self.index]
         if self.index < len(self.motion) - 1:
             self.index += 1
@@ -115,12 +144,12 @@ class Enemy(pg.sprite.Sprite):
 
 
 class Laser(pg.sprite.Sprite):
-    
+
     def __init__(self, img, vel, position):
         pg.sprite.Sprite.__init__(self)
         self.image = img
         self.rect = self.image.get_rect()
-        self.rect.x = position[0] - self.rect.centerx   # Puts the laser at the top center
+        self.rect.x = position[0] - self.rect.centerx  # Puts the laser at the top center
         self.rect.y = position[1]
         self.radius = self.rect[2] // 2
         self.vel = vel
@@ -138,7 +167,6 @@ class Explosion(pg.sprite.Sprite):
         self.image = self.motion[self.index]
         self.rect = self.image.get_rect()
         self.rect.center = position
-        self.vel_y = ENEMY_SPEED
 
     def update(self):
         if self.index < len(self.motion) - 1:

@@ -3,7 +3,7 @@ import gamerepo as gr
 import random
 
 SCREEN_WIDTH = 648
-SCREEN_HEIGHT = 864 - 150  # Changed for test purposes
+SCREEN_HEIGHT = 864 - 150  # Changed for testing purposes
 
 if __name__ == '__main__':
     pg.init()
@@ -18,6 +18,16 @@ if __name__ == '__main__':
     bottom_center = [screen_rect.centerx - size / 2, SCREEN_HEIGHT - size]
     previous = bottom_center[0]  # Previous player's pos
 
+    # Load animations
+    player_ship = gr.load_animation('images/player/{0}.png', 1, 9, 1)
+    enemy_ship = gr.load_animation('images/enemy/{0}.png', 1, 9, 1)
+    laser_hit_explosion = gr.load_animation('images/effects/laser/{0}.png', 1, 18, 1 / 2)
+    red_blast = gr.load_animation('images/effects/red/1_{0}.png', 0, 17, 7 / 6)
+
+    # Load images
+    player_laser = gr.load_image('images/player/laser.png', 1 / 4)
+    enemy_laser = gr.load_image('images/enemy/laser.png', 1 / 4)
+
     # GROUPS
     players = pg.sprite.Group()
     lasers = pg.sprite.Group()
@@ -26,31 +36,8 @@ if __name__ == '__main__':
     explosions = pg.sprite.Group()
 
     # Player data
-    player_laser = pg.transform.smoothscale(pg.image.load(
-        'images/player/laser.png'), (size // 4, size // 4))
-    player_ship = []
-    for i in range(1, 9):
-        img_player = pg.transform.smoothscale(pg.image.load(
-            'images/player/{0}.png'.format(str(i))), (size, size))
-        player_ship.append(img_player)
     player = gr.Player(screen_rect, player_ship, bottom_center)  # Player centered at the bottom
     players.add(player)
-
-    # Enemy data
-    enemy_laser = pg.transform.smoothscale(pg.image.load(
-        'images/enemy/laser.png'), (size // 4, size // 4))
-    enemy_ship = []
-    for i in range(1, 9):
-        img_enemy = pg.transform.smoothscale(pg.image.load(
-            'images/enemy/{0}.png'.format(str(i))), (size, size))
-        enemy_ship.append(img_enemy)
-
-    # Effects data
-    laser_hit_explosion = []
-    for i in range(1, 18):
-        img_hit = pg.transform.smoothscale(pg.image.load(
-            'images/effects/{0}.png'.format(str(i))), (size // 2, size // 2))
-        laser_hit_explosion.append(img_hit)
 
     while run:
         keys = pg.key.get_pressed()
@@ -108,9 +95,8 @@ if __name__ == '__main__':
                 if enemy.health == 0:
                     pos_e = enemy.rect.center
                     enemies.remove(enemy)
-                    # todo agregar RED BLAST
-                    # explosion = gr.Explosion(laser_hit_explosion, pos_e)
-                    # explosions.add(explosion)
+                    explosion = gr.Explosion(red_blast, pos_e)
+                    explosions.add(explosion)
                 else:
                     enemy.health -= 1
 
