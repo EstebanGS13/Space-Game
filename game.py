@@ -2,20 +2,19 @@ import pygame as pg
 import gamerepo as gr
 import random
 
-SCREEN_WIDTH = 648
-SCREEN_HEIGHT = 864 - 150  # Changed for testing purposes
 
 if __name__ == '__main__':
     pg.init()
-    screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+    screen = pg.display.set_mode([gr.SCREEN_WIDTH, gr.SCREEN_HEIGHT])
     screen_rect = screen.get_rect()  # <rect(0, 0, 648, 864)>
     pg.display.flip()
+    bg = pg.image.load('background/corona_up.png')
     run = True
     clock = pg.time.Clock()
     frames = 20
     size = 96  # Ship's sprite size
     laser_speed = 7
-    bottom_center = [screen_rect.centerx - size / 2, SCREEN_HEIGHT - size]
+    bottom_center = [screen_rect.centerx - size / 2, gr.SCREEN_HEIGHT - size]
     previous = bottom_center[0]  # Previous player's pos
 
     # Load animations
@@ -23,6 +22,7 @@ if __name__ == '__main__':
     enemy_ship = gr.load_animation('images/enemy/{0}.png', 1, 9, 1)
     laser_hit_explosion = gr.load_animation('images/effects/laser/{0}.png', 1, 18, 1 / 2)
     red_blast = gr.load_animation('images/effects/red/1_{0}.png', 0, 17, 7 / 6)
+    # warp = gr.load_animation('images/effects/warp/{0}.png', 1, 10, 1/2, 320)
 
     # Load images
     player_laser = gr.load_image('images/player/laser.png', 1 / 4)
@@ -59,17 +59,52 @@ if __name__ == '__main__':
 
         # Enemies control
         if len(enemies) < 5:
-            pos = gr.generate_enemy_pos(SCREEN_WIDTH, size, size * 3)
-            enemy = gr.Enemy(enemy_ship, pos)
+            start_state = gr.generate_start_state()
+            enemy = gr.Enemy(enemy_ship, start_state[0])
+            enemy.vel_x = start_state[1][0]
+            enemy.vel_y = start_state[1][1]
             enemies.add(enemy)
 
         for e in enemies:
-            if e.rect.y > (SCREEN_HEIGHT * 2 / 3) - size:
+            if e.rect.y > (gr.SCREEN_HEIGHT * 2 / 3) - size:
                 # Changes enemy vel when it reaches 2/3 of the screen
                 e.vel_y = -e.speed
-            elif (e.rect.y < 0) and (e.vel_y < 0):
+                e.dice()
+            if (e.rect.y < 0) and (e.vel_y < 0):
                 # Changes enemy vel before it leaves the screen
                 e.vel_y = e.speed
+                e.dice()
+
+            if (e.rect.x < 0) and (e.vel_x < 0):
+                e.vel_x = e.speed
+                e.dice()
+            if (e.rect.x > gr.SCREEN_WIDTH - size) and (e.vel_x > 0):
+                e.vel_x = -e.speed
+                e.dice()
+
+            enemy_collide = pg.sprite.spritecollide(e, enemies, False, pg.sprite.collide_circle)
+            for e2 in enemy_collide:
+                if e != e2:
+                    if (e.rect.right > e2.rect.left) and e.vel_x > 0:  # and e2.vel_x < 0:
+                        # e.rect.right = e2.rect.left
+                        # e2.rect.left = e.rect.right
+                        e.vel_x = -e.vel_x
+                        e2.vel_x = -e2.vel_x
+                    if (e.rect.left < e2.rect.right) and e.vel_x < 0:  # and e2.vel_x > 0:
+                        # e.rect.left = e2.rect.right
+                        # e2.rect.right = e.rect.left
+                        e.vel_x = -e.vel_x
+                        e2.vel_x = -e2.vel_x
+                    if (e.rect.bottom > e2.rect.top) and e.vel_y > 0:  # and e2.vel_y < 0:
+                        # e.rect.bottom = e2.rect.top
+                        # e2.rect.top = e.rect.bottom
+                        e.vel_y = -e.vel_y
+                        e2.vel_y = -e2.vel_y
+                    if (e.rect.top < e2.rect.bottom) and e.vel_y < 0:  # and e2.vel_y > 0:
+                        # e.rect.top = e2.rect.bottom
+                        # e2.rect.bottom = e.rect.top
+                        e.vel_y = -e.vel_x
+                        e2.vel_y = -e2.vel_y
 
             if e.timer == 0:
                 # Create enemy's lasers
@@ -126,10 +161,10 @@ if __name__ == '__main__':
                 #     p.health -= 1
 
         # Lasers' hits explosion control
-        for h in explosions:
-            if h.index == (len(laser_hit_explosion) - 1):
+        for ex in explosions:
+            if ex.index == (len(ex.motion) - 1):
                 # Delete the explosion when animation is over
-                explosions.remove(h)
+                explosions.remove(ex)
 
         # Update
         players.update(keys)
@@ -141,13 +176,13 @@ if __name__ == '__main__':
         previous = player.rect.centerx  # Updates previous player's pos
 
         # Draw
-        screen.fill(gr.BLACK)
+        screen.blit(bg, screen_rect)  # todo mostrar correctamente
+        # screen.fill(gr.BLACK)
         players.draw(screen)
         lasers.draw(screen)
         enemies.draw(screen)
         enemies_lasers.draw(screen)
         explosions.draw(screen)
-
         pg.display.flip()
         clock.tick(frames)
 

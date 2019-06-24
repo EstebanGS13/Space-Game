@@ -1,6 +1,9 @@
 import pygame as pg
 import random
 
+SCREEN_WIDTH = 648
+SCREEN_HEIGHT = 864 - 150  # Changed for testing purposes
+
 BLACK = [0, 0, 0]
 WHITE = [255, 255, 255]
 RED = [255, 0, 0]
@@ -67,14 +70,32 @@ def sprites_matrix(img, sprite_width, sprite_height):
     return matrix
 
 
-def generate_enemy_pos(x_range, size, y_range):
+def generate_start_state(size=96):
     """
     Generates a random position to create
-    the enemies above the screen
+    the enemies either above the screen
+    or to the sides of it and sets the
+    enemy's speed accordingly
     """
-    x = random.randrange(x_range)
-    y = random.randrange(size, y_range)
-    return [x, -y]
+    x_vel = 0
+    y_vel = 0
+    value = random.randrange(1000)
+    if 0 < value <= 333:
+        # Above
+        x = random.randrange(0, SCREEN_WIDTH + 1 - size)
+        y = -size * 2
+        y_vel = ENEMY_SPEED
+    else:
+        if 333 < value <= 666:
+            # Right
+            x = -size * 2
+            x_vel = ENEMY_SPEED
+        else:
+            # Left
+            x = SCREEN_WIDTH
+            x_vel = -ENEMY_SPEED
+        y = random.randrange(0, int(SCREEN_HEIGHT * 2 / 3) + 1 - size)
+    return [[x, y], [x_vel, y_vel]]
 
 
 class Player(pg.sprite.Sprite):
@@ -123,10 +144,25 @@ class Enemy(pg.sprite.Sprite):
         self.rect.y = position[1]
         self.radius = (self.rect[2] // 2) - 6  # Approx. radius
         self.speed = random.randrange(3, 6)
-        self.vel_x = 1
-        self.vel_y = self.speed
+        self.vel_x = 0
+        self.vel_y = 0
         self.health = 2
         self.timer = random.randrange(70)
+
+    def dice(self):
+        value = random.randrange(1000)
+        if 0 < value <= 250:
+            self.vel_x = 0
+            self.vel_y = -self.speed
+        elif 250 < value <= 500:
+            self.vel_x = 0
+            self.vel_y = self.speed
+        elif 500 < value <= 750:
+            self.vel_x = self.speed
+            self.vel_y = 0
+        else:
+            self.vel_x = -self.speed
+            self.vel_y = 0
 
     def update(self, player_pos):
         self.image = self.motion[self.index]
@@ -136,12 +172,13 @@ class Enemy(pg.sprite.Sprite):
             self.index = 0
 
         # Movement
-        if self.rect.centerx < player_pos:
-            self.rect.x += self.vel_x
-        else:
-            self.rect.x -= self.vel_x
+        if self.vel_x == self.vel_y:
+            self.dice()
+        self.rect.x += self.vel_x
         self.rect.y += self.vel_y
         self.timer -= 1
+        # if not self.screen_rect.contains(self.rect):
+        #     self.rect.clamp_ip(self.screen_rect)
 
 
 class Laser(pg.sprite.Sprite):
