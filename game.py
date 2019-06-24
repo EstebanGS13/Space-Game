@@ -74,7 +74,6 @@ if __name__ == '__main__':
                 # Changes enemy vel before it leaves the screen
                 e.vel_y = e.speed
                 e.dice()
-
             if (e.rect.x < 0) and (e.vel_x < 0):
                 e.vel_x = e.speed
                 e.dice()
@@ -82,7 +81,8 @@ if __name__ == '__main__':
                 e.vel_x = -e.speed
                 e.dice()
 
-            enemy_collide = pg.sprite.spritecollide(e, enemies, False, pg.sprite.collide_circle)
+            enemy_collide = pg.sprite.spritecollide(e, enemies, False,
+                                                    pg.sprite.collide_circle)
             for e2 in enemy_collide:
                 if e != e2:
                     e.dice()
@@ -91,7 +91,7 @@ if __name__ == '__main__':
             if e.timer == 0:
                 # Create enemy's lasers
                 e_laser = gr.Laser(enemy_laser, laser_speed,
-                                   [e.rect.centerx, e.rect.y + size])
+                                   [e.rect.centerx, e.rect.centery + size / 4])
                 enemies_lasers.add(e_laser)
                 e.timer = random.randrange(70)
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
             # Collision with enemies
             lasers_hits = pg.sprite.spritecollide(l, enemies, False,
-                                                  pg.sprite.collide_circle)
+                                                  pg.sprite.collide_mask)
             for enemy in lasers_hits:
                 pos_l = l.rect.center
                 lasers.remove(l)  # Delete blue laser when it hits
@@ -125,7 +125,7 @@ if __name__ == '__main__':
                 enemies_lasers.remove(l)
 
             enemy_lasers_hits = pg.sprite.spritecollide(l, players, False,
-                                                        pg.sprite.collide_circle)
+                                                        pg.sprite.collide_mask)
             for p in enemy_lasers_hits:
                 pos_l = l.rect.center
                 enemies_lasers.remove(l)  # Delete red lasers that hit

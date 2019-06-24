@@ -83,7 +83,7 @@ def generate_start_state(size=96):
     if 0 < value <= 333:
         # Above
         x = random.randrange(0, SCREEN_WIDTH + 1 - size)
-        y = -size * 2
+        y = -size
         y_vel = ENEMY_SPEED
     else:
         if 333 < value <= 666:
