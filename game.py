@@ -2,11 +2,12 @@ import pygame as pg
 import gamerepo as gr
 import random
 
-
 if __name__ == '__main__':
     pg.init()
-    screen = pg.display.set_mode([gr.SCREEN_WIDTH, gr.SCREEN_HEIGHT])
-    screen_rect = screen.get_rect()  # <rect(0, 0, 648, 864)>
+    screen = pg.display.set_mode([gr.SCREEN_WIDTH, gr.SCREEN_HEIGHT + gr.UI])
+    screen_rect = screen.get_rect(height=gr.SCREEN_HEIGHT)  # <rect(0, 0, 648, 864)>
+    ui_rect = screen.get_rect(y=gr.SCREEN_HEIGHT, height=gr.UI)
+    print(screen_rect, ui_rect)
     pg.display.flip()
     bg = pg.image.load('background/corona_up.png')
     run = True
@@ -15,7 +16,6 @@ if __name__ == '__main__':
     size = 96  # Ship's sprite size
     laser_speed = 7
     bottom_center = [screen_rect.centerx - size / 2, gr.SCREEN_HEIGHT - size]
-    previous = bottom_center[0]  # Previous player's pos
 
     # Load animations
     player_ship = gr.load_animation('images/player/{0}.png', 1, 9, 1)
@@ -27,6 +27,7 @@ if __name__ == '__main__':
     # Load images
     player_laser = gr.load_image('images/player/laser.png', 1 / 4)
     enemy_laser = gr.load_image('images/enemy/laser.png', 1 / 4)
+    healing = gr.load_image('images/mod/heal.png', 1, 36)
 
     # GROUPS
     players = pg.sprite.Group()
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     enemies = pg.sprite.Group()
     enemies_lasers = pg.sprite.Group()
     explosions = pg.sprite.Group()
+    aid_kits = pg.sprite.Group()
 
     # Player data
     player = gr.Player(screen_rect, player_ship, bottom_center)  # Player centered at the bottom
@@ -50,7 +52,7 @@ if __name__ == '__main__':
                     run = False
                 if event.key == pg.K_SPACE:
                     laser = gr.Laser(player_laser, -laser_speed,
-                                     [player.rect.centerx, player.rect.y])
+                                     [player.rect.centerx - 2, player.rect.y])
                     player.sfx.play()
                     lasers.add(laser)
             if event.type == pg.KEYUP:
@@ -101,7 +103,7 @@ if __name__ == '__main__':
                 # Deletes the laser when it reaches the end of the screen
                 lasers.remove(l)
 
-            # Collision with enemies
+            # Collision lasers with enemies
             lasers_hits = pg.sprite.spritecollide(l, enemies, False,
                                                   pg.sprite.collide_mask)
             for enemy in lasers_hits:
@@ -115,8 +117,26 @@ if __name__ == '__main__':
                     enemies.remove(enemy)
                     explosion = gr.Explosion(red_blast, pos_e)
                     explosions.add(explosion)
+
+                    value = random.randrange(100)
+                    if value < 90:
+                        # Drop aid kit (heal)
+                        aid = gr.AidKit(healing, pos_e)
+                        aid_kits.add(aid)
                 else:
                     enemy.health -= 1
+
+        # Aid Kit's control
+        for a in aid_kits:
+            if a.rect.y > gr.SCREEN_HEIGHT:
+                aid_kits.remove(a)
+
+        # Collision player with aid kits
+        aid_collide = pg.sprite.spritecollide(player, aid_kits, True,
+                                              pg.sprite.collide_mask)
+        for a in aid_collide:
+            if player.health < 10:
+                player.health += 1
 
         # Enemies' lasers control
         for l in enemies_lasers:
@@ -151,20 +171,24 @@ if __name__ == '__main__':
         # Update
         players.update(keys)
         lasers.update()
-        enemies.update(previous)
+        enemies.update()
         enemies_lasers.update()
         explosions.update()
+        aid_kits.update()
 
-        previous = player.rect.centerx  # Updates previous player's pos
 
         # Draw
         screen.blit(bg, screen_rect)  # todo mostrar correctamente
         # screen.fill(gr.BLACK)
+
         players.draw(screen)
         lasers.draw(screen)
         enemies.draw(screen)
         enemies_lasers.draw(screen)
         explosions.draw(screen)
+        aid_kits.draw(screen)
+
+        screen.fill(gr.BLACK, ui_rect)  # Fills UI section with black
         pg.display.flip()
         clock.tick(frames)
 

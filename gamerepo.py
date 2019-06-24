@@ -3,6 +3,7 @@ import random
 
 SCREEN_WIDTH = 648
 SCREEN_HEIGHT = 864 - 150  # Changed for testing purposes
+UI = 50  # UI's height
 
 BLACK = [0, 0, 0]
 WHITE = [255, 255, 255]
@@ -16,6 +17,7 @@ GRAY = [128, 128, 128]
 
 PLAYER_SPEED = 5
 ENEMY_SPEED = 4
+KIT_SPEED = 5
 
 
 def load_image(path, factor, size=96):
@@ -88,7 +90,7 @@ def generate_start_state(size=96):
     else:
         if 333 < value <= 666:
             # Right
-            x = -size * 2
+            x = -size
             x_vel = ENEMY_SPEED
         else:
             # Left
@@ -110,8 +112,9 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
         self.rect.y = position[1]
-        self.radius = (self.rect[2] // 2) - 15
+        self.mask = pg.mask.from_surface(self.image)
         self.speed = PLAYER_SPEED
+        self.health = 1
 
     def update(self, keys):
         self.rect.clamp_ip(self.screen_rect)  # Prevents it from moving outside the screen
@@ -142,7 +145,8 @@ class Enemy(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
         self.rect.y = position[1]
-        self.radius = (self.rect[2] // 2) - 6  # Approx. radius
+        self.radius = (self.rect[2] // 2)  # Approx. radius
+        self.mask = pg.mask.from_surface(self.image)
         self.speed = random.randrange(3, 6)
         self.vel_x = 0
         self.vel_y = 0
@@ -164,7 +168,7 @@ class Enemy(pg.sprite.Sprite):
             self.vel_x = -self.speed
             self.vel_y = 0
 
-    def update(self, player_pos):
+    def update(self):
         self.image = self.motion[self.index]
         if self.index < len(self.motion) - 1:
             self.index += 1
@@ -183,17 +187,17 @@ class Enemy(pg.sprite.Sprite):
 
 class Laser(pg.sprite.Sprite):
 
-    def __init__(self, img, vel, position):
+    def __init__(self, img, vel_y, position):
         pg.sprite.Sprite.__init__(self)
         self.image = img
         self.rect = self.image.get_rect()
         self.rect.x = position[0] - self.rect.centerx  # Puts the laser at the top center
         self.rect.y = position[1]
-        self.radius = self.rect[2] // 2
-        self.vel = vel
+        self.mask = pg.mask.from_surface(self.image)
+        self.vel_y = vel_y
 
     def update(self):
-        self.rect.y += self.vel
+        self.rect.y += self.vel_y
 
 
 class Explosion(pg.sprite.Sprite):
@@ -210,3 +214,17 @@ class Explosion(pg.sprite.Sprite):
         if self.index < len(self.motion) - 1:
             self.image = self.motion[self.index]
             self.index += 1
+
+
+class AidKit(pg.sprite.Sprite):
+
+    def __init__(self, img, position):
+        pg.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+        self.mask = pg.mask.from_surface(self.image)
+        self.vel_y = KIT_SPEED
+
+    def update(self):
+        self.rect.y += self.vel_y
