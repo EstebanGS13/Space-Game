@@ -58,7 +58,7 @@ if __name__ == '__main__':
                 player.vel_y = 0
 
         # Enemies control
-        if len(enemies) < 5:
+        if len(enemies) < 5:  # todo cambiar cantidad conforme pasa el tiempo
             start_state = gr.generate_start_state()
             enemy = gr.Enemy(enemy_ship, start_state[0])
             enemy.vel_x = start_state[1][0]
@@ -85,26 +85,8 @@ if __name__ == '__main__':
             enemy_collide = pg.sprite.spritecollide(e, enemies, False, pg.sprite.collide_circle)
             for e2 in enemy_collide:
                 if e != e2:
-                    if (e.rect.right > e2.rect.left) and e.vel_x > 0:  # and e2.vel_x < 0:
-                        # e.rect.right = e2.rect.left
-                        # e2.rect.left = e.rect.right
-                        e.vel_x = -e.vel_x
-                        e2.vel_x = -e2.vel_x
-                    if (e.rect.left < e2.rect.right) and e.vel_x < 0:  # and e2.vel_x > 0:
-                        # e.rect.left = e2.rect.right
-                        # e2.rect.right = e.rect.left
-                        e.vel_x = -e.vel_x
-                        e2.vel_x = -e2.vel_x
-                    if (e.rect.bottom > e2.rect.top) and e.vel_y > 0:  # and e2.vel_y < 0:
-                        # e.rect.bottom = e2.rect.top
-                        # e2.rect.top = e.rect.bottom
-                        e.vel_y = -e.vel_y
-                        e2.vel_y = -e2.vel_y
-                    if (e.rect.top < e2.rect.bottom) and e.vel_y < 0:  # and e2.vel_y > 0:
-                        # e.rect.top = e2.rect.bottom
-                        # e2.rect.bottom = e.rect.top
-                        e.vel_y = -e.vel_x
-                        e2.vel_y = -e2.vel_y
+                    e.dice()
+                    e2.dice()
 
             if e.timer == 0:
                 # Create enemy's lasers
@@ -138,7 +120,7 @@ if __name__ == '__main__':
 
         # Enemies' lasers control
         for l in enemies_lasers:
-            if l.rect.y > screen_rect[3]:
+            if l.rect.y > gr.SCREEN_HEIGHT:
                 # Delete enemies' lasers when they leave the screen
                 enemies_lasers.remove(l)
 
