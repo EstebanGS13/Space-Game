@@ -114,7 +114,9 @@ class Player(pg.sprite.Sprite):
         self.rect.y = position[1]
         self.mask = pg.mask.from_surface(self.image)
         self.speed = PLAYER_SPEED
-        self.health = 1
+        self.health = 10
+        self.shield = False  # todo crear propia clase para shield?
+        self.kills = 0
 
     def update(self, keys):
         self.rect.clamp_ip(self.screen_rect)  # Prevents it from moving outside the screen
@@ -216,7 +218,7 @@ class Explosion(pg.sprite.Sprite):
             self.index += 1
 
 
-class AidKit(pg.sprite.Sprite):
+class Aid(pg.sprite.Sprite):
 
     def __init__(self, img, position):
         pg.sprite.Sprite.__init__(self)
