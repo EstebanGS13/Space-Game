@@ -20,7 +20,7 @@ ENEMY_SPEED = 4
 KIT_SPEED = 5
 
 
-def load_image(path, factor, size=96):
+def load_image(path, factor=1, size=96):
     """
     Takes an image's path, loads it up, then resizes it
     Args:
@@ -33,7 +33,7 @@ def load_image(path, factor, size=96):
     return img
 
 
-def load_animation(path, start, end, factor, size=96):
+def load_animation(path, start, end, factor=1, size=96):
     """
     Loops through several images' path, loads them up, resizes them
     and then appends them to a list

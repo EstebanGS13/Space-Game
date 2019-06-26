@@ -1,36 +1,35 @@
-import pygame as pg
-import gamerepo as gr
-import random
+from gamerepo import *
+
 
 if __name__ == '__main__':
     pg.init()
-    screen = pg.display.set_mode([gr.SCREEN_WIDTH, gr.SCREEN_HEIGHT + gr.UI])
-    screen_rect = screen.get_rect(height=gr.SCREEN_HEIGHT)  # <rect(0, 0, 648, 864)>
-    ui_rect = screen.get_rect(y=gr.SCREEN_HEIGHT, height=gr.UI)
+    screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT + UI])
+    screen_rect = screen.get_rect(height=SCREEN_HEIGHT)  # <rect(0, 0, 648, 864)>
+    ui_rect = screen.get_rect(y=SCREEN_HEIGHT, height=UI)
     print(screen_rect, ui_rect)
     pg.display.flip()
     bg = pg.image.load('background/corona_up.png')
     run = True
     clock = pg.time.Clock()
     frames = 20
-    size = 96  # Ship's sprite size
+    size = 96  # Base size for sprites
     laser_speed = 7
-    bottom_center = [screen_rect.centerx - size / 2, gr.SCREEN_HEIGHT - size]
+    bottom_center = [screen_rect.centerx - size / 2, SCREEN_HEIGHT - size]
 
     # Load animations
-    player_ship = gr.load_animation('images/player/{0}.png', 1, 9, 1)
-    enemy_ship = gr.load_animation('images/enemy/{0}.png', 1, 9, 1)
-    laser_hit_explosion = gr.load_animation('images/effects/laser/{0}.png', 1, 18, 1 / 2)
-    red_blast = gr.load_animation('images/effects/red/1_{0}.png', 0, 17, 7 / 6)
-    blue_blast = gr.load_animation('images/effects/blue/1_{0}.png', 0, 17, 7 / 6)
-    # warp = gr.load_animation('images/effects/warp/{0}.png', 1, 10, 1/2, 320)
+    player_ship = load_animation('images/player/{0}.png', 1, 9)
+    enemy_ship = load_animation('images/enemy/{0}.png', 1, 9)
+    laser_hit_explosion = load_animation('images/effects/laser/{0}.png', 1, 18, 1 / 2)
+    red_blast = load_animation('images/effects/red/1_{0}.png', 0, 17, 7 / 6)
+    blue_blast = load_animation('images/effects/blue/1_{0}.png', 0, 17, 7 / 6)
+    # warp = load_animation('images/effects/warp/{0}.png', 1, 10, 1/2, 320)
 
     # Load images
-    player_laser = gr.load_image('images/player/laser.png', 1 / 4)
-    enemy_laser = gr.load_image('images/enemy/laser.png', 1 / 4)
-    healing = gr.load_image('images/mod/heal.png', 1, 36)
-    shield_upgrade = gr.load_image('images/mod/shield_upgrade.png', 1, 36)
-
+    player_laser = load_image('images/player/laser.png', 1 / 4)
+    enemy_laser = load_image('images/enemy/laser.png', 1 / 4)
+    healing = load_image('images/mod/heal.png', 1, 36)
+    shield_upgrade = load_image('images/mod/shield_upgrade.png', 1, 36)
+    shield_img = load_image('images/player/shield.png')
     # GROUPS
     players = pg.sprite.Group()
     lasers = pg.sprite.Group()
@@ -41,7 +40,7 @@ if __name__ == '__main__':
     shields = pg.sprite.Group()
 
     # Player data
-    player = gr.Player(screen_rect, player_ship, bottom_center)  # Player centered at the bottom
+    player = Player(screen_rect, player_ship, bottom_center)  # Player centered at the bottom
     players.add(player)
 
     while run:
@@ -55,8 +54,8 @@ if __name__ == '__main__':
                     run = False
                 if event.key == pg.K_SPACE:
                     if players:  # If player is not dead
-                        laser = gr.Laser(player_laser, -laser_speed,
-                                         [player.rect.centerx - 2, player.rect.y])
+                        laser = Laser(player_laser, -laser_speed,
+                                      [player.rect.centerx - 2, player.rect.y])
                         player.sfx.play()
                         lasers.add(laser)
             if event.type == pg.KEYUP:
@@ -65,14 +64,14 @@ if __name__ == '__main__':
 
         # Enemies control
         if len(enemies) < 5:  # todo cambiar cantidad conforme pasa el tiempo
-            start_state = gr.generate_start_state()
-            enemy = gr.Enemy(enemy_ship, start_state[0])
+            start_state = generate_start_state()
+            enemy = Enemy(enemy_ship, start_state[0])
             enemy.vel_x = start_state[1][0]
             enemy.vel_y = start_state[1][1]
             enemies.add(enemy)
 
         for e in enemies:
-            if e.rect.y > (gr.SCREEN_HEIGHT * 2 / 3) - size:
+            if e.rect.y > (SCREEN_HEIGHT * 2 / 3) - size:
                 # Changes enemy vel when it reaches 2/3 of the screen
                 e.vel_y = -e.speed
                 e.dice()
@@ -83,7 +82,7 @@ if __name__ == '__main__':
             if (e.rect.x < 0) and (e.vel_x < 0):
                 e.vel_x = e.speed
                 e.dice()
-            if (e.rect.x > gr.SCREEN_WIDTH - size) and (e.vel_x > 0):
+            if (e.rect.x > SCREEN_WIDTH - size) and (e.vel_x > 0):
                 e.vel_x = -e.speed
                 e.dice()
 
@@ -96,8 +95,8 @@ if __name__ == '__main__':
 
             if e.timer == 0:
                 # Create enemy's lasers
-                e_laser = gr.Laser(enemy_laser, laser_speed,
-                                   [e.rect.centerx, e.rect.centery + size / 4])
+                e_laser = Laser(enemy_laser, laser_speed,
+                                [e.rect.centerx, e.rect.centery + size / 4])
                 enemies_lasers.add(e_laser)
                 e.timer = random.randrange(70)
 
@@ -114,30 +113,30 @@ if __name__ == '__main__':
                 pos_l = l.rect.center
                 lasers.remove(l)  # Delete blue laser when it hits
                 # Create explosion when blue laser hits
-                explosion = gr.Explosion(laser_hit_explosion, pos_l)
+                explosion = Explosion(laser_hit_explosion, pos_l)
                 explosions.add(explosion)
                 if enemy.health == 0:
                     pos_e = enemy.rect.center
                     enemies.remove(enemy)
-                    explosion = gr.Explosion(red_blast, pos_e)
+                    explosion = Explosion(red_blast, pos_e)
                     explosions.add(explosion)
                     player.kills += 1
 
                     value = random.randrange(100)
                     if value < 20:
                         # Drop health kit
-                        aid = gr.Aid(healing, pos_e)
+                        aid = Aid(healing, pos_e)
                         health_kits.add(aid)
                     elif value > 95:
                         # Drop shield upgrade
-                        shield = gr.Aid(shield_upgrade, pos_e)
+                        shield = Aid(shield_upgrade, pos_e)
                         shields.add(shield)
                 else:
                     enemy.health -= 1
 
         # Health Kit's control
         for a in health_kits:
-            if a.rect.y > gr.SCREEN_HEIGHT:
+            if a.rect.y > SCREEN_HEIGHT:
                 health_kits.remove(a)
 
         # Collision player with health kits
@@ -149,7 +148,7 @@ if __name__ == '__main__':
 
         # Shield's control
         for s in shields:
-            if s.rect.y > gr.SCREEN_HEIGHT:
+            if s.rect.y > SCREEN_HEIGHT:
                 shields.remove(s)
 
         # Collision player with shield upgrades
@@ -161,7 +160,7 @@ if __name__ == '__main__':
 
         # Enemies' lasers control
         for l in enemies_lasers:
-            if l.rect.y > gr.SCREEN_HEIGHT:
+            if l.rect.y > SCREEN_HEIGHT:
                 # Delete enemies' lasers when they leave the screen
                 enemies_lasers.remove(l)
 
@@ -171,14 +170,14 @@ if __name__ == '__main__':
                 pos_l = l.rect.center
                 enemies_lasers.remove(l)  # Delete red lasers that hit
                 # Create explosion when red laser hits
-                explosion = gr.Explosion(laser_hit_explosion, pos_l)
+                explosion = Explosion(laser_hit_explosion, pos_l)
                 explosions.add(explosion)
 
                 # Reduce player's health
                 if p.health == 0:
                     pos_p = p.rect.center
                     players.remove(p)  # todo implementar delay cuando muere
-                    explosion = gr.Explosion(blue_blast, pos_p)
+                    explosion = Explosion(blue_blast, pos_p)
                     explosions.add(explosion)
                 else:
                     p.health -= 1
@@ -200,7 +199,6 @@ if __name__ == '__main__':
 
         # Draw
         screen.blit(bg, screen_rect)  # todo mostrar correctamente
-        # screen.fill(gr.BLACK)
 
         players.draw(screen)
         lasers.draw(screen)
@@ -209,8 +207,8 @@ if __name__ == '__main__':
         explosions.draw(screen)
         health_kits.draw(screen)
         shields.draw(screen)
-
-        screen.fill(gr.BLACK, ui_rect)  # Fills UI section with black
+        screen.blit(shield_img, [300, 400])
+        screen.fill(BLACK, ui_rect)  # Fills UI section with black
         pg.display.flip()
         clock.tick(frames)
 
