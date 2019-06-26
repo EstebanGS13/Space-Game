@@ -33,18 +33,19 @@ def load_image(path, factor=1, size=96):
     return img
 
 
-def load_animation(path, start, end, factor=1, size=96):
+def load_animation(path, start, end, factor_x=1, factor_y=1, size_x=96, size_y=96):
     """
     Loops through several images' path, loads them up, resizes them
     and then appends them to a list
     Returns:
         A list of resized images
     """
-    resize = int(size * factor)
+    resize_x = int(size_x * factor_x)
+    resize_y = int(size_y * factor_y)
     img_list = []
     for i in range(start, end):
         img = pg.transform.smoothscale(pg.image.load(
-            path.format(str(i))), (resize, resize))
+            path.format(str(i))), (resize_x, resize_y))
         img_list.append(img)
     return img_list
 

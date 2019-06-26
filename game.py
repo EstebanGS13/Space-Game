@@ -19,10 +19,11 @@ if __name__ == '__main__':
     # Load animations
     player_ship = load_animation('images/player/{0}.png', 1, 9)
     enemy_ship = load_animation('images/enemy/{0}.png', 1, 9)
-    laser_hit_explosion = load_animation('images/effects/laser/{0}.png', 1, 18, 1 / 2)
-    red_blast = load_animation('images/effects/red/1_{0}.png', 0, 17, 7 / 6)
-    blue_blast = load_animation('images/effects/blue/1_{0}.png', 0, 17, 7 / 6)
+    laser_hit_explosion = load_animation('images/effects/laser/{0}.png', 1, 18, 1 / 2, 1 / 2)
+    red_blast = load_animation('images/effects/red/1_{0}.png', 0, 17, 7 / 6, 7 / 6)
+    blue_blast = load_animation('images/effects/blue/1_{0}.png', 0, 17, 7 / 6, 7 / 6)
     # warp = load_animation('images/effects/warp/{0}.png', 1, 10, 1/2, 320)
+    health_bar = load_animation('images/ui/health/VIDA_{0}.png', 0, 11, 1 / 2, 1 / 2, 378, 38)
 
     # Load images
     player_laser = load_image('images/player/laser.png', 1 / 4)
@@ -30,6 +31,7 @@ if __name__ == '__main__':
     healing = load_image('images/mod/heal.png', 1, 36)
     shield_upgrade = load_image('images/mod/shield_upgrade.png', 1, 36)
     shield_img = load_image('images/player/shield.png')
+
     # GROUPS
     players = pg.sprite.Group()
     lasers = pg.sprite.Group()
@@ -174,13 +176,12 @@ if __name__ == '__main__':
                 explosions.add(explosion)
 
                 # Reduce player's health
-                if p.health == 0:
+                if p.health == 1:
                     pos_p = p.rect.center
                     players.remove(p)  # todo implementar delay cuando muere
                     explosion = Explosion(blue_blast, pos_p)
                     explosions.add(explosion)
-                else:
-                    p.health -= 1
+                p.health -= 1
 
         # Lasers' hits explosion control
         for ex in explosions:
@@ -209,6 +210,10 @@ if __name__ == '__main__':
         shields.draw(screen)
         screen.blit(shield_img, [300, 400])
         screen.fill(BLACK, ui_rect)  # Fills UI section with black
+
+        screen.blit(health_bar[player.health], ui_rect)
+
+
         pg.display.flip()
         clock.tick(frames)
 
