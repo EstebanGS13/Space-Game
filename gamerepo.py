@@ -19,6 +19,11 @@ PLAYER_SPEED = 5
 ENEMY_SPEED = 4
 KIT_SPEED = 5
 
+HEAL_DROP_RATIO = 20  # 20 out of 100
+SHIELD_DROP_RATIO = 10  # 10 out of 100
+
+SHIELD_UP_TIME = 20  # In seconds
+
 
 def load_image(path, factor=1, size=96):
     """
@@ -148,7 +153,7 @@ class Enemy(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
         self.rect.y = position[1]
-        self.radius = (self.rect[2] // 2)  # Approx. radius
+        self.radius = (self.rect[2] // 2) + 8  # Approx. radius
         self.mask = pg.mask.from_surface(self.image)
         self.speed = random.randrange(3, 6)
         self.vel_x = 0
@@ -196,6 +201,7 @@ class Laser(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = position[0] - self.rect.centerx  # Puts the laser at the top center
         self.rect.y = position[1]
+        self.radius = (self.rect[2] // 2)
         self.mask = pg.mask.from_surface(self.image)
         self.vel_y = vel_y
 
@@ -231,3 +237,24 @@ class Aid(pg.sprite.Sprite):
 
     def update(self):
         self.rect.y += self.vel_y
+
+
+class Shield(pg.sprite.Sprite):
+
+    def __init__(self, img, position):
+        pg.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+        self.radius = (self.rect[2] // 2) - 6  # Approx. radius
+        self.active = False
+        self.start = 0
+        self.timer = 0
+
+    def update(self, player, current_time):
+        self.rect.center = player.rect.center
+        self.timer = current_time - self.start
+        if self.active and (self.timer > SHIELD_UP_TIME * 1000):
+            # if the difference between times is 20 seconds
+            player.shield = False
+            self.active = False

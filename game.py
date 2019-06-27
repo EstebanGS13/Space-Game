@@ -1,4 +1,7 @@
 from gamerepo import *
+import os
+
+os.environ['SDL_VIDEO_CENTERED'] = '0'
 
 
 if __name__ == '__main__':
@@ -39,11 +42,14 @@ if __name__ == '__main__':
     enemies_lasers = pg.sprite.Group()
     explosions = pg.sprite.Group()
     health_kits = pg.sprite.Group()
+    shield_kits = pg.sprite.Group()
     shields = pg.sprite.Group()
 
     # Player data
     player = Player(screen_rect, player_ship, bottom_center)  # Player centered at the bottom
     players.add(player)
+    player_shield = Shield(shield_img, player.rect.center)
+    shields.add(player_shield)
 
     while run:
         keys = pg.key.get_pressed()
@@ -53,7 +59,7 @@ if __name__ == '__main__':
                 run = False
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
-                    run = False
+                    run = False  # todo cambiar accion
                 if event.key == pg.K_SPACE:
                     if players:  # If player is not dead
                         laser = Laser(player_laser, -laser_speed,
@@ -93,7 +99,7 @@ if __name__ == '__main__':
             for e2 in enemy_collide:
                 if e != e2:
                     e.dice()
-                    e2.dice()
+                    # e2.dice()
 
             if e.timer == 0:
                 # Create enemy's lasers
@@ -125,14 +131,14 @@ if __name__ == '__main__':
                     player.kills += 1
 
                     value = random.randrange(100)
-                    if value < 20:
+                    if value < HEAL_DROP_RATIO:
                         # Drop health kit
                         aid = Aid(healing, pos_e)
                         health_kits.add(aid)
-                    elif value > 95:
+                    elif value > SHIELD_DROP_RATIO:
                         # Drop shield upgrade
                         shield = Aid(shield_upgrade, pos_e)
-                        shields.add(shield)
+                        shield_kits.add(shield)
                 else:
                     enemy.health -= 1
 
@@ -148,17 +154,18 @@ if __name__ == '__main__':
             if player.health < 10:
                 player.health += 1
 
-        # Shield's control
-        for s in shields:
+        # Shield's upgrades control
+        for s in shield_kits:
             if s.rect.y > SCREEN_HEIGHT:
-                shields.remove(s)
+                shield_kits.remove(s)
 
         # Collision player with shield upgrades
-        shield_collide = pg.sprite.spritecollide(player, shields, True,
+        shield_collide = pg.sprite.spritecollide(player, shield_kits, True,
                                                  pg.sprite.collide_mask)
-        for a in shield_collide:
-            if player.health < 10:
-                player.shield = True
+        for s_up in shield_collide:
+            player.shield = True
+            player_shield.active = True
+            player_shield.start = pg.time.get_ticks()
 
         # Enemies' lasers control
         for l in enemies_lasers:
@@ -166,22 +173,34 @@ if __name__ == '__main__':
                 # Delete enemies' lasers when they leave the screen
                 enemies_lasers.remove(l)
 
-            enemy_lasers_hits = pg.sprite.spritecollide(l, players, False,
-                                                        pg.sprite.collide_mask)
-            for p in enemy_lasers_hits:
-                pos_l = l.rect.center
-                enemies_lasers.remove(l)  # Delete red lasers that hit
-                # Create explosion when red laser hits
-                explosion = Explosion(laser_hit_explosion, pos_l)
-                explosions.add(explosion)
-
-                # Reduce player's health
-                if p.health == 1:
-                    pos_p = p.rect.center
-                    players.remove(p)  # todo implementar delay cuando muere
-                    explosion = Explosion(blue_blast, pos_p)
+            if player.shield:
+                # Enemies' lasers collide with shield instead
+                enemy_lasers_hits = pg.sprite.spritecollide(l, shields, False,
+                                                            pg.sprite.collide_circle)
+                for s in enemy_lasers_hits:
+                    pos_l = l.rect.center
+                    enemies_lasers.remove(l)  # Delete red lasers that hit
+                    # Create explosion when red laser hits
+                    explosion = Explosion(laser_hit_explosion, pos_l)
                     explosions.add(explosion)
-                p.health -= 1
+
+            else:
+                enemy_lasers_hits = pg.sprite.spritecollide(l, players, False,
+                                                            pg.sprite.collide_mask)
+                for p in enemy_lasers_hits:
+                    pos_l = l.rect.center
+                    enemies_lasers.remove(l)  # Delete red lasers that hit
+                    # Create explosion when red laser hits
+                    explosion = Explosion(laser_hit_explosion, pos_l)
+                    explosions.add(explosion)
+
+                    # Reduce player's health
+                    if p.health == 1:
+                        pos_p = p.rect.center
+                        players.remove(p)  # todo implementar delay cuando muere
+                        explosion = Explosion(blue_blast, pos_p)
+                        explosions.add(explosion)
+                    p.health -= 1
 
         # Lasers' hits explosion control
         for ex in explosions:
@@ -191,28 +210,32 @@ if __name__ == '__main__':
 
         # Update
         players.update(keys)
+        if player.shield:
+            shields.update(player, pg.time.get_ticks())
         lasers.update()
         enemies.update()
         enemies_lasers.update()
         explosions.update()
         health_kits.update()
-        shields.update()
+        shield_kits.update()
 
         # Draw
         screen.blit(bg, screen_rect)  # todo mostrar correctamente
 
         players.draw(screen)
+        if player.shield:
+            shields.draw(screen)
         lasers.draw(screen)
         enemies.draw(screen)
         enemies_lasers.draw(screen)
         explosions.draw(screen)
         health_kits.draw(screen)
-        shields.draw(screen)
-        screen.blit(shield_img, [300, 400])
+        shield_kits.draw(screen)
+
+        # screen.blit(shield_img, [300, 400])
         screen.fill(BLACK, ui_rect)  # Fills UI section with black
 
         screen.blit(health_bar[player.health], ui_rect)
-
 
         pg.display.flip()
         clock.tick(frames)
