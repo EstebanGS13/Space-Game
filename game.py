@@ -1,3 +1,4 @@
+from moviepy.editor import VideoFileClip
 from gamerepo import *
 import os
 
@@ -5,6 +6,12 @@ os.environ['SDL_VIDEO_CENTERED'] = '0'
 
 if __name__ == '__main__':
     pg.init()
+    pg.display.set_caption('HellStar')
+
+    clip = VideoFileClip('multimedia/v1.mp4')
+    clip.preview()
+
+    bg_music = pg.mixer.Sound('multimedia/Lava Hellfire.ogg')
     screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT + UI])
     screen_rect = screen.get_rect(height=SCREEN_HEIGHT)  # <rect(0, 0, 648, 864)>
     ui_rect = screen.get_rect(y=SCREEN_HEIGHT, height=UI)
@@ -66,6 +73,8 @@ if __name__ == '__main__':
     health_bar = HealthBar(health_bar_img, ui_rect.center)
     ui_stuff.add(health_bar)
 
+    bg_music.play(-1)
+
     while run_lv1 and not delay_over:
         keys = pg.key.get_pressed()
 
@@ -74,7 +83,7 @@ if __name__ == '__main__':
                 run_lv1 = False
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
-                    run_lv1 = False  # todo cambiar accion
+                    run_lv1 = False
                 if event.key == pg.K_SPACE:
                     if players:  # If player is not dead
                         laser = Laser(player_laser, -laser_speed,
@@ -226,7 +235,6 @@ if __name__ == '__main__':
                         start_time = pg.time.get_ticks()
                         explosion = Explosion(blue_blast, pos_p)
                         explosions.add(explosion)
-                        # pg.time.delay(5000) # todo cambiar
                     p.health -= 1
                     p.score -= TAKE_DAMAGE
 
@@ -389,7 +397,7 @@ if __name__ == '__main__':
             if e_2.timer == 0:
                 # Create enemy's lasers
                 e_laser = Laser(enemy_laser, laser_speed,
-                                [e.rect.centerx, e_2.rect.y + size])
+                                [e_2.rect.centerx, e_2.rect.y + size])
                 enemies_lasers.add(e_laser)
                 e_2.timer = random.randrange(30)
 
