@@ -21,7 +21,7 @@ HEAL_DROP_RATIO = 20  # 20 out of 100
 SHIELD_DROP_RATIO = 50  # 10 out of 100
 
 # Timers
-SHIELD_UP_TIME = 20  # In seconds
+SHIELD_UP_TIME = 21  # In seconds
 
 # Colors
 BLACK = [0, 0, 0]
@@ -131,6 +131,8 @@ class Player(pg.sprite.Sprite):
         self.speed = PLAYER_SPEED
         self.health = 10
         self.dead = False
+        self.start_time = 0
+        self.timer_over = False
         self.shield = False
         self.score = 0
         self.kills = 0

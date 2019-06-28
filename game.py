@@ -11,9 +11,11 @@ if __name__ == '__main__':
 
     print(screen_rect, ui_rect)
     pg.display.flip()
-    bg = pg.image.load('background/corona_up.png')
-    run = True
+    run_lv1 = True
+    run_lv2 = False
+    delay_over = False
     clock = pg.time.Clock()
+    current_time = pg.time.get_ticks()
     frames = 20
     game_font = pg.font.Font(None, 24)
 
@@ -32,11 +34,12 @@ if __name__ == '__main__':
 
     # Load images
     bg_1 = pg.image.load('images/background/bg1.png')
+    bg_2 = pg.image.load('images/background/bg2.png')
     player_laser = load_image('images/player/laser.png', 1 / 4)
     enemy_laser = load_image('images/enemy/laser.png', 1 / 4)
     healing = load_image('images/mod/heal.png', 1, 36)
     shield_upgrade = load_image('images/mod/shield_upgrade.png', 1, 36)
-    # shield_upgrade_small = # todo quitar
+    shield_ui = load_image('images/mod/shield_upgrade.png', 1, 28)
     shield_img = load_image('images/player/shield.png')
 
     # GROUPS
@@ -56,21 +59,20 @@ if __name__ == '__main__':
     players.add(player)
     player_shield = Shield(shield_img, player.rect.center)
     shields.add(player_shield)
-
     background_1 = Background(bg_1)
     backgrounds.add(background_1)
     health_bar = HealthBar(health_bar_img, ui_rect.center)
     ui_stuff.add(health_bar)
 
-    while run:
+    while run_lv1 and not delay_over:
         keys = pg.key.get_pressed()
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                run = False
+                run_lv1 = False
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
-                    run = False  # todo cambiar accion
+                    run_lv1 = False  # todo cambiar accion
                 if event.key == pg.K_SPACE:
                     if players:  # If player is not dead
                         laser = Laser(player_laser, -laser_speed,
@@ -216,10 +218,13 @@ if __name__ == '__main__':
                     # Reduce player's health
                     if p.health == 1:
                         pos_p = p.rect.center
-                        players.remove(p)  # todo implementar delay cuando muere
+                        player.dead = True
+                        p.sfx_death.play()
+                        players.remove(player)
+                        start_time = pg.time.get_ticks()
                         explosion = Explosion(blue_blast, pos_p)
                         explosions.add(explosion)
-                        p.sfx_death.play()
+                        # pg.time.delay(5000) # todo cambiar
                     p.health -= 1
                     p.score -= TAKE_DAMAGE
 
@@ -244,7 +249,7 @@ if __name__ == '__main__':
 
         # Draw
 
-        backgrounds.draw(screen)  # todo mostrar correctamente
+        backgrounds.draw(screen)
 
         players.draw(screen)
         if player.shield:
@@ -264,7 +269,8 @@ if __name__ == '__main__':
         if player.shield:
             shield_str = str(int(player_shield.remain_time / 1000)) + " s"
             shield_txt = game_font.render(shield_str, True, WHITE, BLACK)
-            screen.blit(shield_txt, [ui_rect.centerx * 4 / 3, ui_rect.y])
+            screen.blit(shield_ui, [ui_rect.centerx * 4 / 3, ui_rect.y - 8])
+            screen.blit(shield_txt, [ui_rect.centerx * 4 / 3 + 30, ui_rect.y])
         score_str = "Score: " + str(player.score)
         kills_str = "Kills: " + str(player.kills)
         score_text = game_font.render(score_str, True, WHITE, BLACK)
@@ -275,4 +281,256 @@ if __name__ == '__main__':
         pg.display.flip()
         clock.tick(frames)
 
-        # print(pg.time.get_ticks())
+        # Delay handling
+        if background_1.rect.y == 0:
+            run_lv1 = False  # todo poner delay
+            run_lv2 = True
+        if not players:
+            if current_time - start_time > 5000:
+                # run_lv1 = False
+                delay_over = True
+        current_time = pg.time.get_ticks()
+        # if current_time - start_time > 5000:
+        #     delay_over = True
+
+    # Clean groups
+    backgrounds.empty()
+    lasers.empty()
+    enemies.empty()
+    enemies_lasers.empty()
+    explosions.empty()
+    health_kits.empty()
+    shield_kits.empty()
+
+    background_2 = Background(bg_2)
+    backgrounds.add(background_2)
+
+    delay_over = False
+
+    while run_lv2 and not run_lv1 and not delay_over:
+        keys = pg.key.get_pressed()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                run_lv2 = False
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    run_lv2 = False  # todo cambiar accion
+                if event.key == pg.K_SPACE:
+                    if players:  # If player is not dead
+                        laser = Laser(player_laser, -laser_speed,
+                                      [player.rect.centerx - 2, player.rect.y])
+                        player.sfx_laser.play()
+                        lasers.add(laser)
+            if event.type == pg.KEYUP:
+                player.vel_x = 0
+                player.vel_y = 0
+
+        # Enemies control
+        if len(enemies) < 3:  # todo cambiar cantidad conforme pasa el tiempo
+            start_state = generate_start_state()
+            enemy = Enemy(enemy_ship, start_state[0])
+            enemy.vel_x = start_state[1][0]
+            enemy.vel_y = start_state[1][1]
+            enemies.add(enemy)
+
+        for e in enemies:
+            if e.rect.y > (SCREEN_HEIGHT * 2 / 3) - size:
+                # Changes enemy vel when it reaches 2/3 of the screen
+                e.vel_y = -e.speed
+                e.dice()
+            if (e.rect.y < 0) and (e.vel_y < 0):
+                # Changes enemy vel before it leaves the screen
+                e.vel_y = e.speed
+                e.dice()
+            if (e.rect.x < 0) and (e.vel_x < 0):
+                e.vel_x = e.speed
+                e.dice()
+            if (e.rect.x > SCREEN_WIDTH - size) and (e.vel_x > 0):
+                e.vel_x = -e.speed
+                e.dice()
+
+            enemy_collide = pg.sprite.spritecollide(e, enemies, False,
+                                                    pg.sprite.collide_circle)
+            for e2 in enemy_collide:
+                if e != e2:
+                    # e.dice()
+                    e2.dice()
+
+            if e.timer == 0:
+                # Create enemy's lasers
+                e_laser = Laser(enemy_laser, laser_speed,
+                                [e.rect.centerx, e.rect.centery + size / 4])
+                enemies_lasers.add(e_laser)
+                e.timer = random.randrange(50)
+
+        # Player's lasers control
+        for l in lasers:
+            if l.rect.y < -l.rect.height:
+                # Deletes the laser when it reaches the end of the screen
+                lasers.remove(l)
+
+            # Collision lasers with enemies
+            lasers_hits = pg.sprite.spritecollide(l, enemies, False,
+                                                  pg.sprite.collide_mask)
+            for enemy in lasers_hits:
+                pos_l = l.rect.center
+                lasers.remove(l)  # Delete blue laser when it hits
+                # Create explosion when blue laser hits
+                explosion = Explosion(laser_hit_explosion, pos_l)
+                explosions.add(explosion)
+                player.sfx_impact_enemy.play()
+                if enemy.health == 0:
+                    pos_e = enemy.rect.center
+                    enemies.remove(enemy)
+                    explosion = Explosion(red_blast, pos_e)
+                    explosions.add(explosion)
+                    player.sfx_kill.play()
+                    player.score += KILL_POINTS
+                    player.kills += 1
+
+                    value = random.randrange(100)
+                    if value < HEAL_DROP_RATIO:
+                        # Drop health kit
+                        aid = Aid(healing, pos_e)
+                        health_kits.add(aid)
+                    elif value > SHIELD_DROP_RATIO:
+                        # Drop shield upgrade
+                        shield = Aid(shield_upgrade, pos_e)
+                        shield_kits.add(shield)
+                else:
+                    enemy.health -= 1
+                    player.score += HIT_POINTS
+
+        # Health Kit's control
+        for a in health_kits:
+            if a.rect.y > SCREEN_HEIGHT:
+                health_kits.remove(a)
+
+        # Collision player with health kits
+        health_collide = pg.sprite.spritecollide(player, health_kits, True,
+                                                 pg.sprite.collide_mask)
+        for h in health_collide:
+            if player.health < 10:
+                player.health += 1
+                player.sfx_health.play()
+
+        # Shield's upgrades control
+        for s in shield_kits:
+            if s.rect.y > SCREEN_HEIGHT:
+                shield_kits.remove(s)
+
+        # Collision player with shield upgrades
+        shield_collide = pg.sprite.spritecollide(player, shield_kits, True,
+                                                 pg.sprite.collide_mask)
+        for s_upg in shield_collide:
+            player.shield = True
+            player_shield.active = True
+            player.sfx_shield.play()
+            player_shield.start = pg.time.get_ticks()
+
+        # Enemies' lasers control
+        for l in enemies_lasers:
+            if l.rect.y > SCREEN_HEIGHT:
+                # Delete enemies' lasers when they leave the screen
+                enemies_lasers.remove(l)
+
+            if player.shield:
+                # Enemies' lasers collide with shield instead
+                enemy_lasers_hits = pg.sprite.spritecollide(l, shields, False,
+                                                            pg.sprite.collide_circle)
+                for s in enemy_lasers_hits:
+                    pos_l = l.rect.center
+                    enemies_lasers.remove(l)  # Delete red lasers that hit
+                    # Create explosion when red laser hits
+                    explosion = Explosion(laser_hit_explosion, pos_l)
+                    explosions.add(explosion)
+                    player.sfx_take_dmg.play()
+
+            else:
+                enemy_lasers_hits = pg.sprite.spritecollide(l, players, False,
+                                                            pg.sprite.collide_mask)
+                for p in enemy_lasers_hits:
+                    pos_l = l.rect.center
+                    enemies_lasers.remove(l)  # Delete red lasers that hit
+                    # Create explosion when red laser hits
+                    explosion = Explosion(laser_hit_explosion, pos_l)
+                    explosions.add(explosion)
+                    player.sfx_take_dmg.play()
+
+                    # Reduce player's health
+                    if p.health == 1:
+                        pos_p = p.rect.center
+                        player.dead = True
+                        p.sfx_death.play()
+                        players.remove(player)
+                        start_time = pg.time.get_ticks()
+                        explosion = Explosion(blue_blast, pos_p)
+                        explosions.add(explosion)
+                        # pg.time.delay(5000) # todo cambiar
+                    p.health -= 1
+                    p.score -= TAKE_DAMAGE
+
+        # Lasers' hits explosion control
+        for ex in explosions:
+            if ex.index == (len(ex.motion) - 1):
+                # Delete the explosion when animation is over
+                explosions.remove(ex)
+
+        # Update
+        backgrounds.update()
+        players.update(keys)
+        if player.shield:
+            shields.update(player, pg.time.get_ticks())
+        lasers.update()
+        enemies.update()
+        enemies_lasers.update()
+        explosions.update()
+        health_kits.update()
+        shield_kits.update()
+        health_bar.update(player.health)
+
+        # Draw
+
+        backgrounds.draw(screen)
+
+        players.draw(screen)
+        if player.shield:
+            shields.draw(screen)
+        lasers.draw(screen)
+        enemies.draw(screen)
+        enemies_lasers.draw(screen)
+        explosions.draw(screen)
+        health_kits.draw(screen)
+        shield_kits.draw(screen)
+
+        # UI section
+        screen.fill(BLACK, ui_rect)  # Fills UI section with black
+        ui_stuff.draw(screen)
+
+        # Text info
+        if player.shield:
+            shield_str = str(int(player_shield.remain_time / 1000)) + " s"
+            shield_txt = game_font.render(shield_str, True, WHITE, BLACK)
+            screen.blit(shield_ui, [ui_rect.centerx * 4 / 3, ui_rect.y - 8])
+            screen.blit(shield_txt, [ui_rect.centerx * 4 / 3 + 30, ui_rect.y])
+        score_str = "Score: " + str(player.score)
+        kills_str = "Kills: " + str(player.kills)
+        score_text = game_font.render(score_str, True, WHITE, BLACK)
+        kills_text = game_font.render(kills_str, True, WHITE, BLACK)
+        screen.blit(kills_text, ui_rect)
+        screen.blit(score_text, [ui_rect.centerx / 3, ui_rect.y])
+
+        pg.display.flip()
+        clock.tick(frames)
+
+        # Delay handling
+        if background_2.rect.y == 0:
+            run_lv2 = False  # todo poner delay
+        if not players:
+            if current_time - start_time > 5000:
+                # run_lv1 = False
+                delay_over = True
+        current_time = pg.time.get_ticks()
+        # if current_time - start_time > 5000:
+        #     delay_over = True
