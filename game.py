@@ -15,8 +15,8 @@ if __name__ == '__main__':
     screen = pg.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT + UI])
     screen_rect = screen.get_rect(height=SCREEN_HEIGHT)  # <rect(0, 0, 648, 864)>
     ui_rect = screen.get_rect(y=SCREEN_HEIGHT, height=UI)
-
-    print(screen_rect, ui_rect)
+    # print(screen_rect, ui_rect)
+    
     pg.display.flip()
     run_lv1 = True
     pass_lv1 = False
@@ -95,7 +95,7 @@ if __name__ == '__main__':
                 player.vel_y = 0
 
         # Enemies control
-        if len(enemies) < 3:  # todo cambiar cantidad conforme pasa el tiempo
+        if len(enemies) < 4:  # todo cambiar cantidad conforme pasa el tiempo
             start_state = generate_start_state()
             enemy = Enemy(enemy_ship, start_state[0])
             enemy.vel_x = start_state[1][0]

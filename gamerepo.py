@@ -3,7 +3,7 @@ import random
 
 # Screen related dimensions
 SCREEN_WIDTH = 648
-SCREEN_HEIGHT = 864 - 150  # Changed for testing purposes
+SCREEN_HEIGHT = 864 - 100  # Changed for testing purposes
 UI = 20  # UI's height
 
 # Attribute's constants
