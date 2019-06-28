@@ -10,6 +10,7 @@ UI = 20  # UI's height
 PLAYER_SPEED = 5
 ENEMY_SPEED = 4
 KIT_SPEED = 5
+BG_SPEED = 2
 
 # Score modifiers
 KILL_POINTS = 10
@@ -18,7 +19,8 @@ TAKE_DAMAGE = 2
 
 # Drop ratios
 HEAL_DROP_RATIO = 20  # 20 out of 100
-SHIELD_DROP_RATIO = 50  # 10 out of 100
+SHIELD_DROP_RATIO = 90  # 10 out of 100
+DIAGONAL_DROP_RATIO = 20
 
 # Timers
 SHIELD_UP_TIME = 21  # In seconds
@@ -114,6 +116,16 @@ def generate_start_state(size=96):
             x_vel = -ENEMY_SPEED
         y = random.randrange(0, int(SCREEN_HEIGHT * 2 / 3) + 1 - size)
     return [[x, y], [x_vel, y_vel]]
+
+
+def generate_enemy_pos(x_range, size, y_range):
+    """
+    Generates a random position to create
+    the enemies above the screen
+    """
+    x = random.randrange(x_range)
+    y = random.randrange(size, y_range)
+    return [x, -y]
 
 
 class Player(pg.sprite.Sprite):
@@ -215,8 +227,40 @@ class Enemy(pg.sprite.Sprite):
         self.rect.x += self.vel_x
         self.rect.y += self.vel_y
         self.timer -= 1
-        # if not self.screen_rect.contains(self.rect):
-        #     self.rect.clamp_ip(self.screen_rect)
+
+
+class EnemyLvTwo(pg.sprite.Sprite):
+
+    def __init__(self, motion, position):
+        pg.sprite.Sprite.__init__(self)
+        self.motion = motion
+        self.index = 0
+        self.image = self.motion[self.index]
+        self.rect = self.image.get_rect()
+        self.rect.x = position[0]
+        self.rect.y = position[1]
+        self.radius = (self.rect[2] // 2) - 6  # Approx. radius
+        self.mask = pg.mask.from_surface(self.image)
+        self.speed = random.randrange(3, 6)
+        self.vel_x = 1
+        self.vel_y = self.speed
+        self.health = 2
+        self.timer = random.randrange(30)
+
+    def update(self, player_pos):
+        self.image = self.motion[self.index]
+        if self.index < len(self.motion) - 1:
+            self.index += 1
+        else:
+            self.index = 0
+
+        # Movement
+        if self.rect.centerx < player_pos:
+            self.rect.x += self.vel_x
+        else:
+            self.rect.x -= self.vel_x
+        self.rect.y += self.vel_y
+        self.timer -= 1
 
 
 class Laser(pg.sprite.Sprite):
@@ -312,8 +356,12 @@ class Background(pg.sprite.Sprite):
         self.image = img
         self.rect = self.image.get_rect()
         self.rect.bottomleft = [0, SCREEN_HEIGHT]
-        self.vel_y = 2
+        self.vel_y = BG_SPEED
+        self.stop = False
+        self.timer = 0
 
     def update(self):
-        if not self.rect.y == 0:
+        if not self.rect.y >= 0:
             self.rect.y += self.vel_y
+        else:
+            self.rect.y = 0
