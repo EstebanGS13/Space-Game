@@ -1,10 +1,29 @@
 import pygame as pg
 import random
 
+# Screen related dimensions
 SCREEN_WIDTH = 648
 SCREEN_HEIGHT = 864 - 150  # Changed for testing purposes
-UI = 50  # UI's height
+UI = 20  # UI's height
 
+# Attribute's constants
+PLAYER_SPEED = 5
+ENEMY_SPEED = 4
+KIT_SPEED = 5
+
+# Score modifiers
+KILL_POINTS = 10
+HIT_POINTS = 3
+TAKE_DAMAGE = 2
+
+# Drop ratios
+HEAL_DROP_RATIO = 20  # 20 out of 100
+SHIELD_DROP_RATIO = 50  # 10 out of 100
+
+# Timers
+SHIELD_UP_TIME = 20  # In seconds
+
+# Colors
 BLACK = [0, 0, 0]
 WHITE = [255, 255, 255]
 RED = [255, 0, 0]
@@ -14,15 +33,6 @@ YELLOW = [255, 255, 0]
 BROWN = [128, 0, 0]
 PURPLE = [128, 0, 128]
 GRAY = [128, 128, 128]
-
-PLAYER_SPEED = 5
-ENEMY_SPEED = 4
-KIT_SPEED = 5
-
-HEAL_DROP_RATIO = 20  # 20 out of 100
-SHIELD_DROP_RATIO = 10  # 10 out of 100
-
-SHIELD_UP_TIME = 20  # In seconds
 
 
 def load_image(path, factor=1, size=96):
@@ -113,7 +123,6 @@ class Player(pg.sprite.Sprite):
         self.screen_rect = screen_rect
         self.motion = motion
         self.index = 0
-        self.sfx = pg.mixer.Sound('sfx/laserfire01.ogg')
         self.image = self.motion[self.index]
         self.rect = self.image.get_rect()
         self.rect.x = position[0]
@@ -121,8 +130,20 @@ class Player(pg.sprite.Sprite):
         self.mask = pg.mask.from_surface(self.image)
         self.speed = PLAYER_SPEED
         self.health = 10
-        self.shield = False  # todo crear propia clase para shield?
+        self.dead = False
+        self.shield = False
+        self.score = 0
         self.kills = 0
+
+        self.sfx_laser = pg.mixer.Sound('sfx/laserfire01.ogg')
+        self.sfx_laser_diag = pg.mixer.Sound('sfx/laserfire02.wav')
+        self.sfx_health = pg.mixer.Sound('sfx/health.ogg')
+        self.sfx_shield = pg.mixer.Sound('sfx/shield.ogg')
+        self.sfx_shield_up = pg.mixer.Sound('sfx/Fx_shield.wav')  # todo cambiar a algo audible?
+        self.sfx_impact_enemy = pg.mixer.Sound('sfx/impact.ogg')  # todo no se escucha
+        self.sfx_take_dmg = pg.mixer.Sound('sfx/impact_enemy.ogg')
+        self.sfx_kill = pg.mixer.Sound('sfx/destruction_enemy.wav')
+        self.sfx_death = pg.mixer.Sound('sfx/destruction.ogg')
 
     def update(self, keys):
         self.rect.clamp_ip(self.screen_rect)  # Prevents it from moving outside the screen
@@ -131,6 +152,9 @@ class Player(pg.sprite.Sprite):
             self.index += 1
         else:
             self.index = 0
+
+        if self.score < 0:
+            self.score = 0
 
         # Movement
         if keys[pg.K_LEFT] or keys[pg.K_a]:
@@ -159,7 +183,7 @@ class Enemy(pg.sprite.Sprite):
         self.vel_x = 0
         self.vel_y = 0
         self.health = 2
-        self.timer = random.randrange(70)
+        self.timer = random.randrange(50)
 
     def dice(self):
         value = random.randrange(1000)
@@ -248,13 +272,46 @@ class Shield(pg.sprite.Sprite):
         self.rect.center = position
         self.radius = (self.rect[2] // 2) - 6  # Approx. radius
         self.active = False
+        self.up_time = SHIELD_UP_TIME * 1000
         self.start = 0
         self.timer = 0
+        self.remain_time = 0
 
     def update(self, player, current_time):
         self.rect.center = player.rect.center
         self.timer = current_time - self.start
-        if self.active and (self.timer > SHIELD_UP_TIME * 1000):
-            # if the difference between times is 20 seconds
-            player.shield = False
-            self.active = False
+
+        if self.active:
+            self.remain_time = self.up_time - self.timer
+            if self.timer > self.up_time:
+                # if the difference between times is 20 seconds
+                player.shield = False
+                self.active = False
+
+
+class HealthBar(pg.sprite.Sprite):
+
+    def __init__(self, motion, position):
+        pg.sprite.Sprite.__init__(self)
+        self.motion = motion
+        self.index = 10
+        self.image = self.motion[self.index]
+        self.rect = self.image.get_rect()
+        self.rect.center = position
+
+    def update(self, player_hp):
+        self.image = self.motion[player_hp]
+
+
+class Background(pg.sprite.Sprite):
+
+    def __init__(self, img):
+        pg.sprite.Sprite.__init__(self)
+        self.image = img
+        self.rect = self.image.get_rect()
+        self.rect.bottomleft = [0, SCREEN_HEIGHT]
+        self.vel_y = 2
+
+    def update(self):
+        if not self.rect.y == 0:
+            self.rect.y += self.vel_y
